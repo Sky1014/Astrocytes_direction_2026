@@ -41,13 +41,13 @@ use_nb_data_release = true;
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_5'; % original data_name: 20240121_3_1
+    data_name = 'fish_4'; % original data_name: 20240121_2_1
     data_id = string(data_name);
     folder = fullfile(release_dir, data_name, 'swimming', [data_name, '_processed']);
     image_dir = fullfile(release_dir, data_name, 'imaging', [data_name, '_registered']);
 else
     raw_dir = 'F:\Data\Lightsheet\Astrocytes_direction\';
-    data_name = '20240121_3_1';
+    data_name = '20240121_2_1';
     date = string(data_name(:,1:8));
     data_id = string(data_name(:,1:12));
 
@@ -68,12 +68,7 @@ else
     filtdata1 = filter_data(ch1);
     filtdata2 = filter_data(ch2);
 end
-
-load(strcat(folder, '\', data_id, '_stimGain.mat')); 
-load(strcat(folder, '\', data_id, '_Trial_Mode.mat')); 
-load(strcat(folder, '\', data_id, '_y_loc.mat')); 
-load(strcat(folder, '\', data_id, '_CL_weight.mat')); 
-load(strcat(folder, '\', data_id, '_Trial_Stage.mat')); 
+ 
 load(strcat(folder, '\', data_id, '_orient.mat'));
 load(strcat(folder, '\', data_id, '_frames.mat'));
 load(strcat(folder, '\', data_id, '_trials.mat')); 
