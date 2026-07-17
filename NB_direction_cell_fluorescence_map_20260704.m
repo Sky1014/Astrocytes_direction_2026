@@ -57,11 +57,17 @@ else
     image_dir = convertStringsToChars(strcat(Image_dir, string(data_id), '_registered'));
 end
 
-load(strcat(folder, '\', data_id, '_ch1.mat'));
-load(strcat(folder, '\', data_id, '_ch2.mat'));
-
-filtdata1 = filter_data(ch1); 
-filtdata2 = filter_data(ch2); 
+if use_nb_data_release
+    load(strcat(folder, '\', data_id, '_right_swim.mat'), 'right_swim');
+    load(strcat(folder, '\', data_id, '_left_swim.mat'), 'left_swim');
+    filtdata1 = right_swim;
+    filtdata2 = left_swim;
+else
+    load(strcat(folder, '\', data_id, '_ch1.mat'));
+    load(strcat(folder, '\', data_id, '_ch2.mat'));
+    filtdata1 = filter_data(ch1);
+    filtdata2 = filter_data(ch2);
+end
 
 load(strcat(folder, '\', data_id, '_stimGain.mat')); 
 load(strcat(folder, '\', data_id, '_Trial_Mode.mat')); 

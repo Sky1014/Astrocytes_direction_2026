@@ -34,11 +34,17 @@ else
     image_dir = convertStringsToChars(strcat(Image_dir,string(data_id),'_registered'));
 end
 
-load(strcat(folder,'\',data_id,'_ch1.mat'));
-load(strcat(folder,'\',data_id,'_ch2.mat'));
-
-filtdata1 = filter_data(ch1);
-filtdata2 = filter_data(ch2);
+if use_nb_data_release
+    load(strcat(folder,'\',data_id,'_right_swim.mat'), 'right_swim');
+    load(strcat(folder,'\',data_id,'_left_swim.mat'), 'left_swim');
+    filtdata1 = right_swim;
+    filtdata2 = left_swim;
+else
+    load(strcat(folder,'\',data_id,'_ch1.mat'));
+    load(strcat(folder,'\',data_id,'_ch2.mat'));
+    filtdata1 = filter_data(ch1);
+    filtdata2 = filter_data(ch2);
+end
 
 load(strcat(folder,'\',data_id,'_orient.mat'));
 load(strcat(folder,'\',data_id,'_frames.mat'));
@@ -356,10 +362,10 @@ if ~isempty(swim_idx)
 
     plot(x_swim_plot(swim_plot_idx), swim_base + swim_ch1(swim_plot_idx), ...
         'Color', green_swim, 'LineWidth', 0.85, ...
-        'DisplayName', 'Swim ch1');
+        'DisplayName', 'right swim');
     plot(x_swim_plot(swim_plot_idx), swim_base + swim_ch2(swim_plot_idx), ...
         'Color', pink_swim, 'LineWidth', 0.85, ...
-        'DisplayName', 'Swim ch2');
+        'DisplayName', 'left swim');
 end
 
 if ~isempty(stim_events)
@@ -406,6 +412,46 @@ route = Name_File_with_Suffix(route);
 % exportgraphics(gcf, route, 'ContentType', 'image', 'Resolution', 600);
 % disp(strcat('Figure saved to: ', route));
 exportgraphics(gcf, route, 'ContentType', 'vector', 'Resolution', 300);
+
+%% plot direction-specific stimulus kernels
+kernel_fig = figure('Color', 'w', 'Position', [100 100 980 420], 'Visible', 'off');
+kernel_ax = axes(kernel_fig);
+hold(kernel_ax, 'on');
+set(kernel_ax, 'Color', 'w', 'XColor', 'k', 'YColor', 'k', ...
+    'Box', 'off', 'TickDir', 'out');
+
+kernel_height = 0.10;
+frame_samples = round(x_scale_frames * SamplingFreq);
+
+for m = 1:num_directions
+    Mode1_ = [];
+    Mode1_(2,:) = stages(m).onset;
+    Mode1_(3,:) = stages(m).offset;
+    Mode1_(1,:) = 1:size(Mode1_,2);
+
+    Mode1_square_kernel = make_full_square_kernel(Mode1_, Exp);
+    kernel_trace = nan(size(x_scale_frames));
+    valid_frame_mask = frame_samples >= 1 & frame_samples <= numel(Mode1_square_kernel);
+    kernel_trace(valid_frame_mask) = Mode1_square_kernel(frame_samples(valid_frame_mask));
+    kernel_trace = (kernel_trace - 1) / 0.05 * kernel_height;
+    kernel_trace = kernel_trace - m * trace_spacing;
+
+    plot(kernel_ax, x_scale_frames, kernel_trace, ...
+        'Color', trace_colors(m,:), ...
+        'LineWidth', 1.6);
+end
+
+xlim(kernel_ax, x_window);
+ylim(kernel_ax, [-trace_spacing * (num_directions + 0.8), 0.05]);
+set(kernel_ax, 'Visible', 'off', 'XTick', [], 'YTick', [], 'Box', 'off');
+xlabel(kernel_ax, '');
+ylabel(kernel_ax, '');
+
+kernel_route = strcat('D:\WSJ\Mulab\Paper_inbox\astroglia_direction\colorful_calcium_traces\', ...
+    data_name, '_kernels.pdf');
+kernel_route = Name_File_with_Suffix(kernel_route);
+exportgraphics(kernel_fig, kernel_route, 'ContentType', 'vector', 'Resolution', 300);
+close(kernel_fig);
 
 
 function y = normalize_swim_trace_01(x, baseline_prctile, scale_prctile)

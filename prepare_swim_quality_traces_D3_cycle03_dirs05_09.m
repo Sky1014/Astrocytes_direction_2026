@@ -28,15 +28,19 @@ SamplingFreq = 6000;
 
 %% Import swim and synchronization signals
 
-load(strcat(folder, '\', data_id, '_ch1.mat'), 'ch1');
-load(strcat(folder, '\', data_id, '_ch2.mat'), 'ch2');
+if use_nb_data_release
+    load(strcat(folder, '\', data_id, '_right_swim.mat'), 'right_swim');
+    load(strcat(folder, '\', data_id, '_left_swim.mat'), 'left_swim');
+    filtdata1_full = right_swim;
+    filtdata2_full = left_swim;
+else
+    load(strcat(folder, '\', data_id, '_ch1.mat'), 'ch1');
+    load(strcat(folder, '\', data_id, '_ch2.mat'), 'ch2');
+    filtdata1_full = filter_data(ch1);
+    filtdata2_full = filter_data(ch2);
+end
 load(strcat(folder, '\', data_id, '_orient.mat'), 'orient');
 load(strcat(folder, '\', data_id, '_stages.mat'), 'stages');
-
-%% Filter raw swim channels
-
-filtdata1_full = filter_data(ch1);
-filtdata2_full = filter_data(ch2);
 
 out_dir = 'D:\WSJ\Mulab\Paper_inbox\astroglia_direction\bilateral_swim';
 if ~exist(out_dir, 'dir')
@@ -126,8 +130,8 @@ for region_idx = 1:numel(region_specs)
         region_specs(region_idx).start_sample / SamplingFreq, ...
         region_specs(region_idx).end_sample / SamplingFreq);
 end
-fprintf('CH1 baseline/scale: %.6g / %.6g\n', swim_ch1_baseline, swim_ch1_scale);
-fprintf('CH2 baseline/scale: %.6g / %.6g\n', swim_ch2_baseline, swim_ch2_scale);
+fprintf('right swim baseline/scale: %.6g / %.6g\n', swim_ch1_baseline, swim_ch1_scale);
+fprintf('left swim baseline/scale: %.6g / %.6g\n', swim_ch2_baseline, swim_ch2_scale);
 
 
 function plot_bilateral_swim_direction_regions(time_sec, ch1_up, ch2_down, ...
