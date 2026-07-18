@@ -1,7 +1,5 @@
-% Prepare swim traces for recording-quality visualization.
-%
-% This script imports swim-related signals, performs preprocessing, and plots
-% bilateral swim recording-quality views.
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'astro_functions'));
 
 clear; close all; clc;
 
@@ -11,7 +9,7 @@ use_nb_data_release = true;
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_4'; % original data_name: 20240121_2_1
+    data_name = 'fish_4';
     data_id = string(data_name);
     folder = fullfile(release_dir, data_name, 'swimming', [data_name, '_processed']);
 else
@@ -36,8 +34,8 @@ if use_nb_data_release
 else
     load(strcat(folder, '\', data_id, '_ch1.mat'), 'ch1');
     load(strcat(folder, '\', data_id, '_ch2.mat'), 'ch2');
-    filtdata1_full = filter_data(ch1);
-    filtdata2_full = filter_data(ch2);
+    filtdata1_full = filter_data_astrodir2026(ch1);
+    filtdata2_full = filter_data_astrodir2026(ch2);
 end
 load(strcat(folder, '\', data_id, '_orient.mat'), 'orient');
 load(strcat(folder, '\', data_id, '_stages.mat'), 'stages');
@@ -68,8 +66,8 @@ pink_swim = [0.83 0.30 0.62];
 
 full_pdf = fullfile(out_dir, [char(data_id), '_bilateral_swim_full_window.pdf']);
 zoom_pdf = fullfile(out_dir, [char(data_id), '_bilateral_swim_cycle03_zoom.pdf']);
-full_pdf = Name_File_with_Suffix(full_pdf);
-zoom_pdf = Name_File_with_Suffix(zoom_pdf);
+full_pdf = Name_File_with_Suffix_astrodir2026(full_pdf);
+zoom_pdf = Name_File_with_Suffix_astrodir2026(zoom_pdf);
 
 full_stim_bar_intervals = collect_stim_on_intervals( ...
     orient, stages, swim_sample_window(1), swim_sample_window(end), SamplingFreq);
@@ -96,7 +94,6 @@ fprintf('Zoom cycle: trial %d, samples %d to %d (%.3f to %.3f s).\n', ...
     cycle_trial_id, cycle_start, cycle_end, cycle_start / SamplingFreq, cycle_end / SamplingFreq);
 fprintf('right swim baseline/scale: %.6g / %.6g\n', swim_ch1_baseline, swim_ch1_scale);
 fprintf('left swim baseline/scale: %.6g / %.6g\n', swim_ch2_baseline, swim_ch2_scale);
-
 
 function plot_bilateral_swim(time_sec, ch1_up, ch2_down, green_swim, pink_swim, ...
     out_pdf, stim_bar_intervals, direction_events, direction_colors, scale_time_s)
@@ -165,7 +162,6 @@ exportgraphics(fig, out_pdf, ...
 close(fig);
 end
 
-
 function [cycle_start, cycle_end, trial_id] = find_nth_complete_orientation_cycle( ...
     stages, window_start, window_end, nth_cycle)
 n_trials = min(arrayfun(@(s) numel(s.onset), stages));
@@ -175,7 +171,7 @@ for t = 1:n_trials
     cycle_start_candidate = min(arrayfun(@(s) s.onset(t), stages));
     cycle_end_candidate = max(arrayfun(@(s) s.offset(t), stages));
     if cycle_end_candidate >= window_start && cycle_start_candidate <= window_end
-        overlap_trials(end + 1) = t; %#ok<AGROW>
+        overlap_trials(end + 1) = t;
     end
 end
 
@@ -189,7 +185,6 @@ cycle_start = min(arrayfun(@(s) s.onset(trial_id), stages));
 cycle_end = max(arrayfun(@(s) s.offset(trial_id), stages));
 end
 
-
 function stage_events = collect_stage_events(stages, trial_id, sampling_freq)
 stage_events = zeros(numel(stages), 3);
 for dir_id = 1:numel(stages)
@@ -199,7 +194,6 @@ for dir_id = 1:numel(stages)
 end
 stage_events = sortrows(stage_events, 1);
 end
-
 
 function stim_bar_intervals = collect_stim_on_intervals( ...
     orient, stages, window_start, window_end, sampling_freq)
@@ -218,7 +212,7 @@ for moving_id = 1:length(moving_onsets)
         clipped_offset = min(offset_sample, window_end);
         stim_bar_intervals(end + 1, :) = [ ...
             clipped_onset / sampling_freq, ...
-            clipped_offset / sampling_freq]; %#ok<AGROW>
+            clipped_offset / sampling_freq];
     end
 end
 
@@ -238,7 +232,7 @@ if initial_dir_id <= length(stages)
         if offset_s >= window_start / sampling_freq && onset_s <= window_end / sampling_freq
             clipped_onset_s = max(onset_s, window_start / sampling_freq);
             clipped_offset_s = min(offset_s, window_end / sampling_freq);
-            stim_bar_intervals(end + 1, :) = [clipped_onset_s, clipped_offset_s]; %#ok<AGROW>
+            stim_bar_intervals(end + 1, :) = [clipped_onset_s, clipped_offset_s];
         end
     end
 end
@@ -249,7 +243,6 @@ if ~isempty(stim_bar_intervals)
 end
 end
 
-
 function colors = make_direction_colors()
 colors = hsv(12);
 colors_hsv = rgb2hsv(colors);
@@ -257,7 +250,6 @@ colors_hsv(:, 2) = colors_hsv(:, 2) * 0.65;
 colors_hsv(:, 3) = colors_hsv(:, 3) * 0.85;
 colors = hsv2rgb(colors_hsv);
 end
-
 
 function style_axes(ax)
 set(ax, ...
@@ -269,7 +261,6 @@ set(ax, ...
     'FontSize', 12);
 grid(ax, 'off');
 end
-
 
 function draw_time_scale_bar(ax, scale_time_s)
 x_limits = xlim(ax);
@@ -293,7 +284,6 @@ text(ax, (x1 + x2) / 2, y + text_gap, sprintf('%g s', scale_time_s), ...
     'VerticalAlignment', 'bottom', ...
     'Clipping', 'off');
 end
-
 
 function [y, baseline, scale_value] = normalize_swim_trace_01(x, baseline_prctile, scale_prctile)
 x = double(x(:));
@@ -320,7 +310,6 @@ end
 
 y = min(y / scale_value, 1);
 end
-
 
 function p = local_percentile(x, percentile_value)
 x = sort(x(:));

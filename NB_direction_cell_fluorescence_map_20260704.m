@@ -1,25 +1,12 @@
-% NB_direction_cell_fluorescence_map_20260704
-% Plot D3 NB direction-preferring cells as a black-background fluorescence map.
-%
-% This script follows D3_NB_Figure_withSwim.m for data import and direction
-% colors. It creates a new figure only; it does not modify source data.
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'astro_functions'));
 
 disp('Clearing workspace.');
 clear;
 close all;
 
 %% Paths and user options
-project_dir = 'D:\WSJ\Code\git\Project\27_Orientation';
-custom_fun_dir = 'D:\WSJ\Code\git\Project\20_Useful_customized_functions';
-flex_fun_dir = 'D:\WSJ\Code\git\Project\9_FlexCLs';
 
-addpath(project_dir);
-addpath(genpath(custom_fun_dir));
-addpath(flex_fun_dir);
-
-% Preferred method:
-%   'regressor'  - use the same direction kernel/regressor logic as D3_NB_Figure_withSwim.m
-%   'trial_peak' - use average trial peak per direction, similar to Find_Preference_Direction_20240123.m
 preference_method = 'regressor';
 
 num_directions = 12;
@@ -33,7 +20,7 @@ show_title = false;
 save_figure = false;
 
 export_route = 'D:\WSJ\Mulab\Paper_inbox\astroglia_direction\NB_direction_cell_map.pdf';
-export_route = Name_File_with_Suffix(export_route);
+export_route = Name_File_with_Suffix_astrodir2026(export_route);
 
 %% Import data, following D3_NB_Figure_withSwim.m
 tic;
@@ -41,7 +28,7 @@ use_nb_data_release = true;
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_4'; % original data_name: 20240121_2_1
+    data_name = 'fish_4';
     data_id = string(data_name);
     folder = fullfile(release_dir, data_name, 'swimming', [data_name, '_processed']);
     image_dir = fullfile(release_dir, data_name, 'imaging', [data_name, '_registered']);
@@ -65,20 +52,20 @@ if use_nb_data_release
 else
     load(strcat(folder, '\', data_id, '_ch1.mat'));
     load(strcat(folder, '\', data_id, '_ch2.mat'));
-    filtdata1 = filter_data(ch1);
-    filtdata2 = filter_data(ch2);
+    filtdata1 = filter_data_astrodir2026(ch1);
+    filtdata2 = filter_data_astrodir2026(ch2);
 end
- 
+
 load(strcat(folder, '\', data_id, '_orient.mat'));
 load(strcat(folder, '\', data_id, '_frames.mat'));
-load(strcat(folder, '\', data_id, '_trials.mat')); 
+load(strcat(folder, '\', data_id, '_trials.mat'));
 load(strcat(folder, '\', data_id, '_stages.mat'));
 load(strcat(folder, '\', data_id, '_stages_framed.mat'));
 
 disp('Loading imaging data...');
-cell_resp_dim_processed = []; 
+cell_resp_dim_processed = [];
 load(fullfile(image_dir, 'cell_resp_dim_processed.mat'));
-cell_resp_processed = read_LSstack_fast_float(fullfile(image_dir, 'cell_resp_processed.stackf'), cell_resp_dim);
+cell_resp_processed = read_LSstack_fast_float_astrodir2026(fullfile(image_dir, 'cell_resp_processed.stackf'), cell_resp_dim);
 disp('cell_resp_processed loaded.');
 
 cell_info = [];
@@ -105,32 +92,20 @@ else
 end
 
 %% Camera and background brain
-cam_id = 2; % Release data originally used ch0_cam1.xml; cam1 maps to cam_id = 2.
-% xml_path = strcat(image_dir, '\ch0_cam1.xml');
-% if contains(xml_path, 'cam1')
-%     cam_id = 2;
-% elseif contains(xml_path, 'cam0')
-%     cam_id = 1;
-% else
-%     error('Cannot infer cam_id from xml path: %s', xml_path);
-% end
-%
-% camera_settings = Extract_Parameters_xml(xml_path, 'exposure_ms', 'dimensions');
-% planes = cell2mat(camera_settings{1,2});
-% planes = planes(end); 
+cam_id = 2;
 
 if registered_cells
     template_dir = 'D:\WSJ\Code\git\Multineuromodulatory-integration\13_registration\gfap\';
     template_path = [template_dir, '\Temp_gfapChR2ECFP_8bit.nrrd'];
-    brain_bg = double(nrrdread(template_path));
+    brain_bg = double(nrrdread_astrodir2026(template_path));
 else
     ave_path = [image_dir, '\ave.tif'];
-    brain_bg = double(ReadTiff(ave_path));
+    brain_bg = double(ReadTiff_astrodir2026(ave_path));
 end
 
 %% Direction colors, following D3_NB_Figure_withSwim.m
 tmp_fig = figure('Visible', 'off');
-colormap_glia = colormap(slanCM('gist_rainbow'));
+colormap_glia = colormap(slanCM_astrodir2026('gist_rainbow'));
 close(tmp_fig);
 
 row_ids = round(linspace(1, size(colormap_glia,1), num_directions));
@@ -252,8 +227,8 @@ function [preferred_dir, preference_score, direction_score] = local_regressor_pr
         Mode(3,:) = stages(dir_id).offset;
         Mode(1,:) = 1:size(Mode,2);
 
-        Mode_square_kernel = make_full_square_kernel(Mode, Exp);
-        Mode_cells = make_customized_regressor(Mode_square_kernel, frame_scale_qualified, ...
+        Mode_square_kernel = make_full_square_kernel_astrodir2026(Mode, Exp);
+        Mode_cells = make_customized_regressor_astrodir2026(Mode_square_kernel, frame_scale_qualified, ...
             frame_qualified, cell_resp_qualified, rho_standard);
 
         original_cell_ids = valid_cell_ids(Mode_cells.cell_index);

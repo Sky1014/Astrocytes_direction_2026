@@ -1,15 +1,14 @@
-clear; close all; clc;
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'astro_functions'));
 
-% Plot motion summary from motion_param.mat as depth-resolved PDF figures.
-% The script reads existing processed data only and does not rerun motion
-% estimation.
+clear; close all; clc;
 
 use_nb_data_release = true;
 legacy_data_dir = 'F:\Data\Lightsheet\20240120\Volume\20240120_3_1_registered';
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_2'; % original data_name: 20240120_3_1
+    data_name = 'fish_2';
     data_dir = fullfile(release_dir, data_name, 'imaging', [data_name, '_registered']);
 else
     data_dir = legacy_data_dir;
@@ -27,8 +26,8 @@ end
 motion_param_path = fullfile(data_dir, 'motion_param.mat');
 xy_pdf = fullfile(out_dir, 'motion_param_xy_depth_summary.pdf');
 z_pdf = fullfile(out_dir, 'motion_param_z_depth_summary.pdf');
-xy_pdf = Name_File_with_Suffix(xy_pdf);
-z_pdf = Name_File_with_Suffix(z_pdf);
+xy_pdf = Name_File_with_Suffix_astrodir2026(xy_pdf);
+z_pdf = Name_File_with_Suffix_astrodir2026(z_pdf);
 
 depth_step_um = 8;
 xy_pixel_size_um = 0.406;
@@ -74,7 +73,6 @@ plot_depth_summary(depth_um, z_mean, z_sem, ...
 fprintf('Saved XY summary PDF: %s\n', xy_pdf);
 fprintf('Saved Z summary PDF:  %s\n', z_pdf);
 
-
 function plot_depth_summary(depth_um, mean_values, sem_values, ...
     y_label, fig_title, pdf_path, blue, blue_edge, y_limits)
 
@@ -115,7 +113,6 @@ exportgraphics(fig, pdf_path, ...
 close(fig);
 end
 
-
 function style_axes(ax)
 set(ax, ...
     'Box', 'on', ...
@@ -134,7 +131,6 @@ ax.YLabel.FontSize = 13;
 ax.Title.FontSize = 12;
 end
 
-
 function y = local_mean_omitnan(x)
 x = x(isfinite(x));
 if isempty(x)
@@ -143,7 +139,6 @@ else
     y = mean(x);
 end
 end
-
 
 function y = local_sem_omitnan(x)
 x = x(isfinite(x));
@@ -154,7 +149,6 @@ else
     y = std(x, 0) / sqrt(n);
 end
 end
-
 
 function step = depth_step_from_values(depth_um)
 if numel(depth_um) < 2

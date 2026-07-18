@@ -1,15 +1,14 @@
-clear; close all; clc;
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'astro_functions'));
 
-% Plot plane-12 motion patches on the original, non-downsampled image.
-% This script only reads existing files. It does not rerun registration or
-% motion estimation.
+clear; close all; clc;
 
 use_nb_data_release = true;
 legacy_data_dir = 'F:\Data\Lightsheet\20240120\Volume\20240120_3_1_registered';
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_2'; % original data_name: 20240120_3_1
+    data_name = 'fish_2';
     data_dir = fullfile(release_dir, data_name, 'imaging', [data_name, '_registered']);
 else
     data_dir = legacy_data_dir;
@@ -29,9 +28,9 @@ xy_pixel_size_um = 0.406;
 scale_bar_um = 50;
 scale_bar_px = scale_bar_um / xy_pixel_size_um;
 
-patch_box_px = 20;          % Same visual square size used in check_motion_new.m
-arrow_display_scale = 10;   % Same display amplification used in check_motion_new.m
-show_scale_text = false;    % Set true to show "50 um" above the scale bar.
+patch_box_px = 20;
+arrow_display_scale = 10;
+show_scale_text = false;
 
 if ~exist(out_dir, 'dir')
     mkdir(out_dir);
@@ -49,28 +48,23 @@ mp = motion_param(plane_id);
 inds = double(mp.indslist(:));
 tilt_med = double(mp.tilt_med);
 
-% motion_param(zz).indslist is saved in original MATLAB linear indices:
-% row + (col - 1) * image_height, with image size [1920, 1100].
 [patch_y, patch_x] = ind2sub([img_h, img_w], inds);
 
 z_motion_rounded = round(tilt_med(:, 3));
 z_values = [-2 -1 0 1 2];
 z_colors = [
-    0 0 1;   % -2 planes: blue
-    0 1 1;   % -1 plane : cyan
-    0 1 0;   %  0 planes: green
-    1 1 0;   % +1 plane : yellow
-    1 0 0    % +2 planes: red
+    0 0 1;
+    0 1 1;
+    0 1 0;
+    1 1 0;
+    1 0 0
 ];
 
 z_pdf = fullfile(out_dir, sprintf('plane%02d_z_motion_patches.pdf', plane_id));
-z_pdf = Name_File_with_Suffix(z_pdf);
+z_pdf = Name_File_with_Suffix_astrodir2026(z_pdf);
 xy_pdf = fullfile(out_dir, sprintf('plane%02d_xy_motion_arrows.pdf', plane_id));
-xy_pdf = Name_File_with_Suffix(xy_pdf);
+xy_pdf = Name_File_with_Suffix_astrodir2026(xy_pdf);
 
-% -------------------------------------------------------------------------
-% Figure 1: z-motion colored patch squares
-% -------------------------------------------------------------------------
 fig_z = new_full_image_figure(img_w, img_h);
 ax_z = axes(fig_z, 'Position', [0 0 1 1]);
 show_background(ax_z, img);
@@ -93,9 +87,6 @@ draw_scale_bar(ax_z, img_w, img_h, scale_bar_px, scale_bar_um, show_scale_text);
 export_pdf(fig_z, z_pdf);
 close(fig_z);
 
-% -------------------------------------------------------------------------
-% Figure 2: xy-motion arrows
-% -------------------------------------------------------------------------
 fig_xy = new_full_image_figure(img_w, img_h);
 ax_xy = axes(fig_xy, 'Position', [0 0 1 1]);
 show_background(ax_xy, img);
@@ -119,7 +110,6 @@ fprintf('Saved xy-motion PDF: %s\n', xy_pdf);
 fprintf('Scale bar: %.1f um = %.2f pixels at %.3f um/pixel\n', ...
     scale_bar_um, scale_bar_px, xy_pixel_size_um);
 
-
 function fig = new_full_image_figure(img_w, img_h)
 fig = figure('Color', 'k', ...
     'Units', 'pixels', ...
@@ -127,7 +117,6 @@ fig = figure('Color', 'k', ...
     'InvertHardcopy', 'off', ...
     'Visible', 'off');
 end
-
 
 function show_background(ax, img)
 clim = robust_clim(img, [0.5 100]);
@@ -137,7 +126,6 @@ axis(ax, 'image');
 axis(ax, 'off');
 set(ax, 'YDir', 'reverse');
 end
-
 
 function draw_scale_bar(ax, img_w, img_h, scale_bar_px, scale_bar_um, show_scale_text)
 margin_x = 70;
@@ -161,7 +149,6 @@ if show_scale_text
 end
 end
 
-
 function clim = robust_clim(img, pct)
 x = double(img(:));
 x = x(isfinite(x));
@@ -183,7 +170,6 @@ if clim(1) >= clim(2)
     clim = [0 1];
 end
 end
-
 
 function export_pdf(fig, pdf_path)
 try

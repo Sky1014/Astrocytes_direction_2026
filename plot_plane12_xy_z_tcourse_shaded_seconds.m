@@ -1,8 +1,7 @@
-clear; close all; clc;
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'astro_functions'));
 
-% Plot plane-12 Z- and XY-motion timecourses from the saved move_tcourse
-% intermediate.
-% The x-axis is converted from frame index to seconds using frames.mat.
+clear; close all; clc;
 
 data_dir = 'D:\WSJ\Mulab\Paper_inbox\astroglia_direction\motion_check_figures';
 move_tcourse_path = fullfile(data_dir, 'move_tcourse_for_plot.mat');
@@ -11,7 +10,7 @@ use_nb_data_release = true;
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_2'; % original data_name: 20240120_3_1
+    data_name = 'fish_2';
     frames_path = fullfile(release_dir, data_name, 'swimming', [data_name, '_processed'], [data_name, '_frames.mat']);
 else
     frames_path = fullfile(data_dir, '20240120_3_1_frames.mat');
@@ -27,8 +26,8 @@ end
 
 z_pdf = fullfile(data_dir, ['motion_tcourse_z_shaded_seconds', file_suffix, '.pdf']);
 xy_pdf = fullfile(data_dir, ['motion_tcourse_xy_shaded_seconds', file_suffix, '.pdf']);
-z_pdf = Name_File_with_Suffix(z_pdf);
-xy_pdf = Name_File_with_Suffix(xy_pdf);
+z_pdf = Name_File_with_Suffix_astrodir2026(z_pdf);
+xy_pdf = Name_File_with_Suffix_astrodir2026(xy_pdf);
 
 plane_id = 12;
 line_color = hex2rgb('#d5b34f');
@@ -71,7 +70,6 @@ fprintf('Saved plane-%02d XY shaded timecourse PDF: %s\n', plane_id, xy_pdf);
 fprintf('Shaded error: %s, n_patches=%d\n', error_label, n_patches);
 fprintf('Frame interval: %.6f s\n', frame_interval_sec);
 
-
 function rgb = hex2rgb(hex)
 hex = char(hex);
 if startsWith(hex, '#')
@@ -79,7 +77,6 @@ if startsWith(hex, '#')
 end
 rgb = sscanf(hex, '%2x%2x%2x', [1 3]) / 255;
 end
-
 
 function plot_shaded_timecourse(time_sec, mean_um, err_um, y_label, y_limits, ...
     line_color, shade_alpha, out_pdf)
@@ -106,7 +103,6 @@ plot(ax, time_sec, mean_um, ...
 
 xlim(ax, [0 max(time_sec)]);
 ylim(ax, y_limits);
-% ylim(ax, [-abs(min(upper)) * 4, max(upper) * 4]);
 xlabel(ax, 'Time (s)');
 ylabel(ax, y_label);
 
@@ -117,7 +113,6 @@ exportgraphics(fig, out_pdf, ...
     'BackgroundColor', 'white');
 close(fig);
 end
-
 
 function style_axes(ax)
 set(ax, ...

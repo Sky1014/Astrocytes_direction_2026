@@ -1,30 +1,29 @@
-% Pipeline of CLOL transition
-
 %% import ephys data
+script_dir = fileparts(mfilename('fullpath'));
+addpath(fullfile(script_dir, 'astro_functions'));
+
 disp('Clearing workspace.');
 clear all
 close all
 
 colormap_glia = [];
-colormap_glia = colormap(slanCM('gist_rainbow'));
+colormap_glia = colormap(slanCM_astrodir2026('gist_rainbow'));
 close all
 
 tic
 use_nb_data_release = true;
 
-% x_window = [996, 1477]; % 20240120_3_1
-x_window = [542,1040]; % 20240121_2_1
+x_window = [542,1040];
 
 if use_nb_data_release
     release_dir = 'F:\Data\Lightsheet\Astrocytes_direction\NB_data_release';
-    data_name = 'fish_4'; % original data_name: 20240121_2_1
+    data_name = 'fish_4';
     data_id = string(data_name);
     folder = fullfile(release_dir, data_name, 'swimming', [data_name, '_processed']);
     image_dir = fullfile(release_dir, data_name, 'imaging', [data_name, '_registered']);
 else
     raw_dir = 'F:\Data\Lightsheet\Astrocytes_direction\';
     data_name = '20240121_2_1';
-    % data_name = '20240120_3_1';
     date = string(data_name(:,1:8));
     data_id = string(data_name(:,1:12));
 
@@ -42,8 +41,8 @@ if use_nb_data_release
 else
     load(strcat(folder,'\',data_id,'_ch1.mat'));
     load(strcat(folder,'\',data_id,'_ch2.mat'));
-    filtdata1 = filter_data(ch1);
-    filtdata2 = filter_data(ch2);
+    filtdata1 = filter_data_astrodir2026(ch1);
+    filtdata2 = filter_data_astrodir2026(ch2);
 end
 
 load(strcat(folder,'\',data_id,'_orient.mat'));
@@ -56,35 +55,24 @@ disp("Loading imaging data...")
 cell_resp_dim_processed = [];
 load(fullfile(image_dir,'\cell_resp_dim_processed.mat'));
 cell_resp_processed = [];
-cell_resp_processed = read_LSstack_fast_float(fullfile(image_dir,'\cell_resp_processed.stackf'),cell_resp_dim);
+cell_resp_processed = read_LSstack_fast_float_astrodir2026(fullfile(image_dir,'\cell_resp_processed.stackf'),cell_resp_dim);
 disp('cell_resp_processed loaded');
 cell_info = [];
 if exist(fullfile(image_dir,'\cell_loc.csv'))
     load(fullfile(image_dir,'\cell_info_processed.mat'));
-    disp('已配准');
-    cells = []; 
+    disp('Registered cell locations loaded.');
+    cells = [];
     for k = 1: cell_resp_dim(1)
-        cells(k,1) = cell_info(k).center_aligned(2); % 如果报错，可能是因为没有run cell2region.m
+        cells(k,1) = cell_info(k).center_aligned(2);
         cells(k,2) = cell_info(k).center_aligned(1);
         cells(k,3) = cell_info(k).center_aligned(3);
     end
 else
     load(fullfile(image_dir,'\cell_info.mat'));
-    disp('未配准'); 
+    disp('Unregistered cell locations loaded.');
 end
 
-% xml_path = strcat(image_dir,'\ch0_cam1.xml');
-% if contains(xml_path, 'cam1')
-%     cam_id = 2;
-% elseif contains(xml_path, 'cam0')
-%     cam_id = 1;
-% end
-%
-% camera_settings = Extract_Parameters_xml(xml_path,'exposure_ms','dimensions');
-% exposure_time = camera_settings{1};
-% planes = cell2mat(camera_settings{1,2});
-% planes = planes(end);
-m = 1; % Start from this imaging frame.
+m = 1;
 n = cell_resp_dim(2);
 
 SamplingFreq = 6000;
@@ -106,10 +94,6 @@ swim_ch2_norm_full = normalize_swim_trace_01(filtdata2, ...
 swim_ch1_mirror_ready_full = -swim_ch1_norm_full;
 swim_ch2_mirror_ready_full = swim_ch2_norm_full;
 
-figure; hold on
-plot(x_scale_swim(1:50:end),filtdata1(1:50:end),'r');
-plot(x_scale_swim(1:50:end),filtdata2(1:50:end),'b');
-
 num_directions = 12;
 trace_spacing = 0.14;
 
@@ -122,26 +106,6 @@ trace_hsv(:,2) = trace_hsv(:,2) * 0.60;
 trace_hsv(:,3) = trace_hsv(:,3) * 0.82;
 trace_colors = hsv2rgb(trace_hsv);
 
-
-%% read template brain or ave brain
-% if exist(fullfile(image_dir,'\cell_loc.csv'))
-% 
-%     template_dir = 'D:\WSJ\Code\git\Multineuromodulatory-integration\13_registration\gfap\';
-%     template_path = [template_dir,'\Temp_gfapChR2ECFP_8bit.nrrd'];
-%     template_brain = nrrdread(template_path);
-%     template_brain = double(template_brain);
-% 
-% else
-%     ave_path = [image_dir,'\ave.tif'];
-%     ave_brain = ReadTiff(ave_path);
-% 
-%     for k = 1: cell_resp_dim(1)
-%     cells(k,1) = cell_info(k).center(2); % 如果报错，可能是因为没有run cell2region.m
-%     cells(k,2) = cell_info(k).center(1);
-%     cells(k,3) = cell_info(k).slice;
-%     end
-% end
-
 %%
 shuffled_trials = 0;
 Exp = [];
@@ -149,8 +113,6 @@ Exp(1,1) = 1;
 if shuffled_trials == 0
     Exp(2,1) = stages(1).onset(1);
     Exp(3,1) = stages(11).offset(end);
-else
-    % 读出最长的 trial_id 的最后一个 mode 的最后一个 offset
 end
 
 rho_standard = 0.1;
@@ -201,8 +163,6 @@ hold on
 set(gca,'Color','w','XColor','k','YColor','k','Box','off','TickDir','out');
 
 Mode1_ = [];
-% m = 2;
-% m = m + 1;
 
 for m = 1:12
     if use_mode1_trace_cache
@@ -213,27 +173,16 @@ for m = 1:12
         Mode1_(3,:) = stages(m).offset;
         Mode1_(1,:) = 1:size(Mode1_,2);
 
-        % find Trial-Mode-related glia cells
-        % extract qualified frames
-        % Keep the NB figure open while adding all direction traces.
         frame_qualified = [];
         frame_qualified = frames(find(frames(1:end,2) >= Exp(2,1) & frames(1:end,2) <= Exp(3,end)),2);
         cell_resp_qualified = [];
         cell_resp_qualified = cell_resp_processed(:,find(frames(1:end,2) >= Exp(2,1) & frames(1:end,2) <= Exp(3,end)));
         frame_scale_qualified = (frame_qualified - frame_qualified(1,1) + 1)/6000;
 
-        % find cells active in Mode1
         Mode1_square_kernel = [];
-        Mode1_square_kernel = make_full_square_kernel(Mode1_, Exp);
+        Mode1_square_kernel = make_full_square_kernel_astrodir2026(Mode1_, Exp);
         Mode1_cells = [];
-        Mode1_cells = make_customized_regressor(Mode1_square_kernel, frame_scale_qualified, frame_qualified, cell_resp_qualified, rho_standard);
-%     % cell_plot(Mode1_cells.cell_index, image_dir, cell_info, planes);
-%     cell_plot_colorbar(Mode1_cells.rho, ave_brain, ...
-%         cells(Mode1_cells.cell_index,:), 1, cam_id,'YellowPink',1);
-%     % cell_plot_template_colorbar(Mode1_cells.rho, template_brain, ...
-%     %     cells(Mode1_cells.cell_index,:), 1, cam_id);
-%     % cell_plot_template_new_colorbar(Mode1_cells.rho, template_brain, ...
-%     %     cells(Mode1_cells.cell_index,:), 1, cam_id,'YellowPink',1);
+        Mode1_cells = make_customized_regressor_astrodir2026(Mode1_square_kernel, frame_scale_qualified, frame_qualified, cell_resp_qualified, rho_standard);
 
         temp = [];
         temp = mean(cell_resp_processed(Mode1_cells.cell_index,:))-1;
@@ -242,11 +191,6 @@ for m = 1:12
     end
     plot(x_scale_frames, temp - m * trace_spacing, 'DisplayName', num2str(m), ...
         'Color', trace_colors(m,:), 'LineWidth', 1.6);
-
-%     temp = [];
-%     temp = mean(cell_resp_processed(391:392,:))-1;
-%     plot(x_scale_frames,temp - m/7,'displayname','Average Active neurons','color',...
-%         colormap_glia(row_ids(m),:),'displayname',num2str(m),'linewidth',2);
     xlim(x_window);
 end
 
@@ -256,7 +200,7 @@ if ~use_mode1_trace_cache
     cache_exp = Exp;
     cache_rho_standard = rho_standard;
     cache_num_directions = num_directions;
-    mode1_trace_save_path = Name_File_with_Suffix(mode1_trace_cache_path);
+    mode1_trace_save_path = Name_File_with_Suffix_astrodir2026(mode1_trace_cache_path);
     save(mode1_trace_save_path, 'mode1_trace_mean_all', ...
         'mode1_cell_index_all', 'cache_data_name', 'cache_version', ...
         'cache_exp', 'cache_rho_standard', 'cache_num_directions');
@@ -264,7 +208,6 @@ if ~use_mode1_trace_cache
 end
 
 %% add orient-based moving stimulus bars, swim traces, and direction lines
-% figure;hold on
 
 stim_events = [];
 for dir_id = 1:num_directions
@@ -273,7 +216,7 @@ for dir_id = 1:num_directions
             onset_s = stages(dir_id).onset(trial_id) / SamplingFreq;
             offset_s = stages(dir_id).offset(trial_id) / SamplingFreq;
             if offset_s >= x_window(1) && onset_s <= x_window(2)
-                stim_events(end+1,:) = [onset_s, offset_s, dir_id]; 
+                stim_events(end+1,:) = [onset_s, offset_s, dir_id];
             end
         end
     end
@@ -302,7 +245,7 @@ for moving_id = 1:length(moving_onsets)
     onset_s = x_scale_swim(moving_onsets(moving_id));
     offset_s = x_scale_swim(moving_offsets(moving_id));
     if offset_s >= x_window(1) && onset_s <= x_window(2)
-        stim_bar_intervals(end+1,:) = [onset_s, offset_s];  
+        stim_bar_intervals(end+1,:) = [onset_s, offset_s];
     end
 end
 
@@ -320,7 +263,7 @@ if initial_dir_id <= length(stages)
         onset_s = stages(initial_dir_id).onset(trial_id) / SamplingFreq;
         offset_s = onset_s + moving_bar_duration;
         if offset_s >= x_window(1) && onset_s <= x_window(2)
-            stim_bar_intervals(end+1,:) = [onset_s, offset_s];  
+            stim_bar_intervals(end+1,:) = [onset_s, offset_s];
         end
     end
 end
@@ -407,10 +350,7 @@ ylabel('');
 
 %%
 route = strcat('D:\WSJ\Mulab\Paper_inbox\astroglia_direction\colorful_calcium_traces\',data_name,'_fig5.pdf');
-route = Name_File_with_Suffix(route);
-% set(gcf, 'Renderer', 'opengl');
-% exportgraphics(gcf, route, 'ContentType', 'image', 'Resolution', 600);
-% disp(strcat('Figure saved to: ', route));
+route = Name_File_with_Suffix_astrodir2026(route);
 exportgraphics(gcf, route, 'ContentType', 'vector', 'Resolution', 300);
 
 %% plot direction-specific stimulus kernels
@@ -429,7 +369,7 @@ for m = 1:num_directions
     Mode1_(3,:) = stages(m).offset;
     Mode1_(1,:) = 1:size(Mode1_,2);
 
-    Mode1_square_kernel = make_full_square_kernel(Mode1_, Exp);
+    Mode1_square_kernel = make_full_square_kernel_astrodir2026(Mode1_, Exp);
     kernel_trace = nan(size(x_scale_frames));
     valid_frame_mask = frame_samples >= 1 & frame_samples <= numel(Mode1_square_kernel);
     kernel_trace(valid_frame_mask) = Mode1_square_kernel(frame_samples(valid_frame_mask));
@@ -449,10 +389,9 @@ ylabel(kernel_ax, '');
 
 kernel_route = strcat('D:\WSJ\Mulab\Paper_inbox\astroglia_direction\colorful_calcium_traces\', ...
     data_name, '_kernels.pdf');
-kernel_route = Name_File_with_Suffix(kernel_route);
+kernel_route = Name_File_with_Suffix_astrodir2026(kernel_route);
 exportgraphics(kernel_fig, kernel_route, 'ContentType', 'vector', 'Resolution', 300);
 close(kernel_fig);
-
 
 function y = normalize_swim_trace_01(x, baseline_prctile, scale_prctile)
 x = double(x(:));
@@ -477,7 +416,6 @@ end
 
 y = min(y / scale_value, 1);
 end
-
 
 function p = local_percentile(x, percentile_value)
 x = sort(x(:));
